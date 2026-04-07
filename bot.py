@@ -1,8 +1,14 @@
 import asyncio
 import requests
 from bs4 import BeautifulSoup
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, CallbackQueryHandler, filters, ContextTypes
+from telegram import (
+    Update, InlineKeyboardButton, InlineKeyboardMarkup,
+    ReplyKeyboardMarkup
+)
+from telegram.ext import (
+    ApplicationBuilder, MessageHandler, CommandHandler,
+    CallbackQueryHandler, filters, ContextTypes
+)
 
 from flask import Flask
 from threading import Thread
@@ -18,10 +24,9 @@ def run_web():
     app_web.run(host='0.0.0.0', port=10000)
 
 def keep_alive():
-    t = Thread(target=run_web)
-    t.start()
+    Thread(target=run_web).start()
 
-# ---------------- BOT TOKEN ----------------
+# ---------------- TOKEN ----------------
 TOKEN = "8635795971:AAEp02mSGigN2l89Ca6cPh2Skfom9meakv8"
 
 user_stop = {}
@@ -29,7 +34,12 @@ last_range = {}
 
 # ---------------- START ----------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🚀 Ready!")
+    keyboard = [["🚀 Start"]]
+
+    await update.message.reply_text(
+        "🚀 Ready!",
+        reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    )
 
 # ---------------- GET TRANSACTION ----------------
 def get_tran_ids(roll):
@@ -160,15 +170,18 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
     uid = update.message.from_user.id
 
+    # START BUTTON CLICK
     if text.lower() in ["🚀 start", "start"]:
         await update.message.reply_text("🚀 Ready!")
         return
 
+    # SINGLE
     if text.isdigit():
         r = int(text)
         last_range[uid] = (r, r)
         await run_search(update.message, r, r)
 
+    # RANGE
     elif "-" in text:
         try:
             s, e = map(int, text.split("-"))
@@ -204,7 +217,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ---------------- MAIN ----------------
 def main():
-    keep_alive()  # Flask start
+    keep_alive()
 
     app = ApplicationBuilder().token(TOKEN).build()
 
@@ -212,7 +225,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
     app.add_handler(CallbackQueryHandler(button))
 
-    print("🤖 BOT RUNNING 24/7...")
+    print("🤖 BOT RUNNING FINAL...")
     app.run_polling()
 
 if __name__ == "__main__":
